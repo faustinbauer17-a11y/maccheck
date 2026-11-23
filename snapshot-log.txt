@@ -1,0 +1,11 @@
+01-home.png: 1280x684
+02-check-computer-running.png: 1280x684
+03-check-computer-result.png: 1280x684
+04-test-battery.png: 1280x684
+04-test-thermals.png: 1280x684
+04-test-storage.png: 1280x684
+06-app-doctor-choose.png: 1280x684
+07-app-doctor-result.png: 1280x684
+08-tools-settings.png: 1280x684
+09-reports-latest.png: 1280x684
+10-export-review.png: 920x640
