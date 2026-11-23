@@ -2,7 +2,7 @@
 import SwiftUI
 import MacCheckCore
 
-/// Design tokens. Dark, calm, slightly blue-tinted neutrals; one accent; semantic status colours
+/// Design tokens. Dark graphite neutrals; one accent; semantic status colours
 /// that are always paired with an icon and a word (never colour alone).
 enum Theme {
     static func rgb(_ hex: UInt32) -> Color {
@@ -10,10 +10,10 @@ enum Theme {
     }
 
     // Surfaces: higher elevation = lighter.
-    static let background = rgb(0x0E1116)
-    static let surface = rgb(0x151A21)
-    static let raised = rgb(0x1B222B)
-    static let border = rgb(0x28313C)
+    static let background = rgb(0x121214)
+    static let surface = rgb(0x1B1C1F)
+    static let raised = rgb(0x232427)
+    static let border = rgb(0x303236)
     static let text = rgb(0xE6EAF0)
     static let muted = rgb(0xA3ADBB)   // ≥ 4.5:1 on `surface`
     static let accent = rgb(0x6AA8FF)
