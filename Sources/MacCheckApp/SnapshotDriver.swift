@@ -23,20 +23,18 @@ enum SnapshotDriver {
         }
 
         model.selection = .dashboard
-        await shot("01-dashboard-empty")
+        await waitUntil(15) { model.live != nil && !model.liveLoading }
+        await shot("01-home")
 
         model.runFullDiagnostic()
         await pause(0.6)
-        await shot("02-full-diagnostic-running")
+        await shot("02-check-computer-running")
         await waitUntil(20) { model.scanState == .finished || model.scanState == .cancelled }
-        await shot("03-full-diagnostic-result")
-
-        model.selection = .dashboard
-        await shot("04-dashboard")
+        await shot("03-check-computer-result")
 
         for area in [DiagnosticArea.battery, .thermals, .storage] {
             model.selection = .area(area)
-            await shot("05-area-\(area.rawValue)")
+            await shot("04-test-\(area.rawValue)")
         }
 
         model.selection = .appDoctor
@@ -49,11 +47,16 @@ enum SnapshotDriver {
         await waitUntil(30) { model.doctorPhase == .result || { if case .failed = model.doctorPhase { return true }; return false }() }
         await shot("07-app-doctor-result")
 
+        model.selection = .settings
+        await shot("08-tools-settings")
+        model.selection = .reports
+        await shot("09-reports-latest")
+
         if let report = model.latestReport {
             model.beginExport(report)
             await pause(1.2)
             let sheet = NSApp.windows.first { $0.isSheet && $0.isVisible }
-            log.append(capture(sheet, to: dir.appendingPathComponent("08-export-review.png")))
+            log.append(capture(sheet, to: dir.appendingPathComponent("10-export-review.png")))
             model.exportDraft = nil
         }
 

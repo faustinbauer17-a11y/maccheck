@@ -17,7 +17,7 @@ struct HistoryView: View {
                 if model.history.isEmpty {
                     EmptyState(symbol: "clock", title: "No history yet",
                                message: "Each scan and App Doctor investigation is saved here, on this Mac only.",
-                               actionTitle: "Run Full Diagnostic") { model.runFullDiagnostic() }
+                               actionTitle: "Check Computer") { model.runFullDiagnostic() }
                 } else {
                     List(model.history, selection: $selected) { entry in
                         HStack {
@@ -50,7 +50,7 @@ struct HistoryView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: Theme.s4) {
                             HStack {
-                                SectionTitle(title: report.kind == .appDoctor ? "App Doctor: \(report.appDoctor?.appName ?? "")" : "Full diagnostic",
+                                SectionTitle(title: report.kind == .appDoctor ? "App Doctor: \(report.appDoctor?.appName ?? "")" : "Check Computer",
                                              subtitle: report.createdAt.formatted(date: .complete, time: .shortened))
                                 Spacer()
                                 Button("Review & Export…") { model.beginExport(report) }

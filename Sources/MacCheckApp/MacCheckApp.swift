@@ -12,16 +12,18 @@ struct MacCheckApp: App {
             RootView()
                 .environment(model)
                 .preferredColorScheme(.dark)
-                .frame(minWidth: 880, minHeight: 600)
+                .frame(minWidth: 900, minHeight: 600)
         }
-        .defaultSize(width: 1120, height: 760)
+        .defaultSize(width: 1040, height: 700)
         .commands {
             CommandGroup(after: .newItem) {
-                Button("Run Full Diagnostic") { model.runFullDiagnostic() }
+                Button("Check Computer") { model.runFullDiagnostic() }
                     .keyboardShortcut("r", modifiers: [.command])
                     .disabled(model.scanState == .running)
                 Button("Open App Doctor") { model.selection = .appDoctor }
                     .keyboardShortcut("d", modifiers: [.command, .shift])
+                Button("Show Overview") { model.selection = .dashboard }
+                    .keyboardShortcut("0", modifiers: [.command])
                 Divider()
                 Button("Export Latest Report…") { if let r = model.latestReport { model.beginExport(r) } }
                     .keyboardShortcut("e", modifiers: [.command])
@@ -44,38 +46,32 @@ struct RootView: View {
     var body: some View {
         @Bindable var model = model
         VStack(spacing: 0) {
-            if model.isSample { SampleBanner() }
             NavigationSplitView {
-                List(selection: $model.selection) {
-                    Section {
-                        Label("Overview", systemImage: "square.grid.2x2").tag(SidebarItem.dashboard)
-                        Label("Full Diagnostic", systemImage: "stethoscope").tag(SidebarItem.fullScan)
-                        Label("App Doctor", systemImage: "cross.case").tag(SidebarItem.appDoctor)
-                    }
-                    Section("Areas") {
-                        ForEach(DiagnosticArea.allCases) { area in
-                            HStack {
-                                Label(area.title, systemImage: area.symbolName)
-                                Spacer()
-                                if let status = model.latestReport?.result(for: area)?.status {
-                                    Image(systemName: status.symbol).foregroundStyle(status.color)
-                                        .accessibilityLabel(status.title)
-                                }
-                            }
-                            .tag(SidebarItem.area(area))
-                        }
-                    }
-                    Section {
-                        Label("History", systemImage: "clock.arrow.circlepath").tag(SidebarItem.history)
-                    }
-                }
-                .navigationSplitViewColumnWidth(min: 200, ideal: 230)
+                SidebarView()
+                    .navigationSplitViewColumnWidth(min: 220, ideal: 236, max: 300)
             } detail: {
                 ZStack {
-                    Theme.background.ignoresSafeArea()
+                    Theme.backdrop.ignoresSafeArea()
                     detail
                 }
+                .toolbar {
+                    if model.isSample {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button { model.selection = .settings } label: {
+                                Label("Sample data", systemImage: "theatermasks")
+                                    .labelStyle(.titleAndIcon)
+                                    .foregroundStyle(Theme.sample)
+                            }
+                            .help("Results are sample data, not from this Mac. Click to switch to live data.")
+                        }
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("About This Mac") { model.open(SettingsLinks.aboutThisMac) }
+                            .help("Opens \(SettingsLinks.aboutThisMac.path).")
+                    }
+                }
             }
+            FooterBar()
         }
         .sheet(item: Binding(get: { model.exportDraft.map(DraftBox.init) },
                              set: { model.exportDraft = $0?.draft })) { box in
@@ -91,10 +87,12 @@ struct RootView: View {
 
     @ViewBuilder private var detail: some View {
         switch model.selection ?? .dashboard {
-        case .dashboard: DashboardView()
+        case .dashboard: HomeView()
         case .fullScan: ScanView()
         case .appDoctor: AppDoctorView()
         case .history: HistoryView()
+        case .reports: ReportsView()
+        case .settings: SettingsPage()
         case let .area(area): AreaDetailView(area: area)
         }
     }

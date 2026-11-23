@@ -27,6 +27,13 @@ enum Theme {
     static let failed = rgb(0xC9A2F2)
     static let sample = rgb(0xE9B54F)
 
+    // Home screen / window chrome: neutral graphite, like a pro-tools utility.
+    static let gauge = rgb(0x3D9BF2)
+    static let dial = rgb(0x3A3B3F)
+    static let dialEdge = rgb(0x25262A)
+    static let footer = rgb(0x0A0A0B)
+    static let backdrop = LinearGradient(colors: [rgb(0x1E1F22), rgb(0x0C0C0E)], startPoint: .top, endPoint: .bottom)
+
     // Spacing (4-pt scale) and radii.
     static let s1: CGFloat = 4, s2: CGFloat = 8, s3: CGFloat = 12, s4: CGFloat = 16, s6: CGFloat = 24, s8: CGFloat = 32
     static let radiusSm: CGFloat = 6, radiusMd: CGFloat = 10, radiusLg: CGFloat = 14
@@ -122,18 +129,6 @@ struct EvidenceTag: View {
             .padding(.horizontal, 6).padding(.vertical, 1)
             .overlay(Capsule().strokeBorder(evidence == .sample ? Theme.sample.opacity(0.6) : Theme.border))
             .accessibilityLabel("Evidence: \(evidence.label)")
-    }
-}
-
-struct SampleBanner: View {
-    var body: some View {
-        Label("Sample data — not from this Mac. Switch to live data in Settings.", systemImage: "theatermasks")
-            .font(.callout.weight(.semibold))
-            .foregroundStyle(Theme.background)
-            .padding(.horizontal, Theme.s4).padding(.vertical, Theme.s2)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.sample)
-            .accessibilityLabel("Sample data mode. Results are not from this Mac.")
     }
 }
 

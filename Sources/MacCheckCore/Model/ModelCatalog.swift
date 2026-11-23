@@ -97,6 +97,8 @@ public enum SettingsLinks {
                                                      url: "x-apple.systempreferences:com.apple.preference.security")
     public static let activityMonitor = SystemSettingsLink(title: "Open Activity Monitor", path: "Applications → Utilities → Activity Monitor",
                                                      url: "bundle:com.apple.ActivityMonitor")
+    public static let aboutThisMac = SystemSettingsLink(title: "About This Mac", path: "System Settings → General → About",
+                                                  url: "x-apple.systempreferences:com.apple.SystemProfiler.AboutExtension")
     public static let console = SystemSettingsLink(title: "Open Console", path: "Applications → Utilities → Console",
                                              url: "bundle:com.apple.Console")
 

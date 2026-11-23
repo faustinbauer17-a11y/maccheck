@@ -141,6 +141,7 @@ public struct ScanOrchestrator: Sendable {
 }
 
 public enum MacCheckInfo {
-    public static let version = "0.1.0"
+    public static let version = "0.2.0"
+    public static let build = "2"
     public static let name = "MacCheck"
 }

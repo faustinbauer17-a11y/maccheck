@@ -6,9 +6,39 @@ import UniformTypeIdentifiers
 import MacCheckCore
 import MacCheckMac
 
+/// Pages shown in the main area. `.dashboard` is the home screen (gauges + device).
 enum SidebarItem: Hashable {
-    case dashboard, fullScan, appDoctor, history
+    case dashboard, fullScan, appDoctor, history, reports, settings
     case area(DiagnosticArea)
+
+    /// The sidebar tab that lists this page. Home isn't listed in a tab of its own.
+    var tab: SidebarTab? {
+        switch self {
+        case .fullScan, .area: return .tests
+        case .appDoctor, .settings: return .tools
+        case .reports, .history: return .reports
+        case .dashboard: return nil
+        }
+    }
+}
+
+enum SidebarTab: String, CaseIterable, Identifiable {
+    case tests, tools, reports
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .tests: return "Tests"
+        case .tools: return "Tools"
+        case .reports: return "Reports"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .tests: return "magnifyingglass"
+        case .tools: return "wrench.and.screwdriver"
+        case .reports: return "doc.text"
+        }
+    }
 }
 
 enum DataMode: String, CaseIterable, Identifiable {
@@ -49,12 +79,29 @@ struct SampleRepairPerformer: RepairPerformer {
 @Observable
 final class AppModel {
     // MARK: Settings (persisted in UserDefaults)
-    var mode: DataMode { didSet { defaults.set(mode.rawValue, forKey: "mode"); latestReport = nil; resetDoctor(); loadHistory() } }
+    var mode: DataMode {
+        didSet {
+            defaults.set(mode.rawValue, forKey: "mode")
+            latestReport = nil
+            resetDoctor()
+            loadHistory()
+            live = nil
+            refreshLive()
+        }
+    }
     var includeIdentifiers: Bool { didSet { defaults.set(includeIdentifiers, forKey: "includeIdentifiers") } }
     var networkProbesEnabled: Bool { didSet { defaults.set(networkProbesEnabled, forKey: "networkProbes") } }
 
     // MARK: Navigation
-    var selection: SidebarItem? = .dashboard
+    var selection: SidebarItem? = .dashboard {
+        didSet { if let tab = selection?.tab { sidebarTab = tab } }
+    }
+    var sidebarTab: SidebarTab = .tests
+
+    // MARK: Home screen readings (local only, no network)
+    var live: LiveOverview?
+    var liveLoading = false
+    private var liveGeneration = 0
 
     // MARK: Full diagnostic
     var scanState: ScanState = .idle
@@ -116,6 +163,37 @@ final class AppModel {
     var collectors: CollectorSet { isSample ? SampleData.collectors() : MacPlatform.collectors() }
     var doctorSources: AppDoctorSources { isSample ? SampleData.appDoctorSources() : MacPlatform.appDoctorSources() }
     var redactor: Redactor { isSample ? Redactor() : MacPlatform.redactor() }
+
+    // MARK: Home screen
+
+    /// Reads battery, hardware, CPU/memory, thermal state and storage for the home gauges.
+    /// Read-only and local: network probes are always off here. Each reading has its own deadline.
+    func refreshLive() {
+        liveGeneration += 1
+        let generation = liveGeneration
+        liveLoading = true
+        let c = collectors
+        var opts = options
+        opts.networkProbesEnabled = false
+        Task {
+            async let battery = Self.read(c.battery, opts)
+            async let hardware = Self.read(c.hardware, opts)
+            async let performance = Self.read(c.performance, opts)
+            async let thermals = Self.read(c.thermals, opts)
+            async let storage = Self.read(c.storage, opts)
+            let overview = LiveOverview.make(battery: await battery, hardware: await hardware,
+                                             performance: await performance, thermals: await thermals,
+                                             storage: await storage, isSample: c.isSample)
+            guard generation == self.liveGeneration else { return } // a newer refresh (or mode switch) won
+            self.live = overview
+            self.liveLoading = false
+        }
+    }
+
+    /// One collector with a deadline. Nil means it failed or timed out; the gauge then says so.
+    nonisolated private static func read<S: Sendable>(_ collector: Collector<S>, _ options: CollectionOptions) async -> S? {
+        try? await withDeadline(seconds: 10) { try await collector.collect(options) }
+    }
 
     // MARK: Scans
 

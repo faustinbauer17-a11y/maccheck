@@ -2,144 +2,6 @@
 import SwiftUI
 import MacCheckCore
 
-// MARK: - Dashboard
-
-struct DashboardView: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Theme.s6) {
-                header
-                if let report = model.latestReport {
-                    overview(report)
-                    areaGrid(report)
-                } else {
-                    Card {
-                        EmptyState(symbol: "stethoscope", title: "No diagnostic yet",
-                                   message: "Run a Full Diagnostic to check battery, hardware, performance, thermals, network and storage. It takes about 10 seconds and changes nothing on your Mac.",
-                                   actionTitle: "Run Full Diagnostic") { model.runFullDiagnostic() }
-                    }
-                }
-                appDoctorTeaser
-            }
-            .padding(Theme.s6)
-            .frame(maxWidth: 1000, alignment: .leading)
-        }
-        .navigationTitle("Overview")
-    }
-
-    private var header: some View {
-        HStack(alignment: .center, spacing: Theme.s4) {
-            Image(systemName: "laptopcomputer").font(.system(size: 34, weight: .light)).foregroundStyle(Theme.accent)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(model.latestReport?.device?.modelName ?? "This Mac").font(.title2.weight(.semibold)).foregroundStyle(Theme.text)
-                if let d = model.latestReport?.device {
-                    Text([d.chip, d.memory, d.macOS].compactMap { $0 }.joined(separator: " · "))
-                        .font(.callout).foregroundStyle(Theme.muted)
-                } else {
-                    Text("Device details appear after the first scan.").font(.callout).foregroundStyle(Theme.muted)
-                }
-            }
-            Spacer()
-            Button {
-                model.runFullDiagnostic()
-            } label: {
-                Label(model.scanState == .running ? "Scanning…" : "Run Full Diagnostic", systemImage: "play.fill")
-            }
-            .buttonStyle(PrimaryButtonStyle())
-            .disabled(model.scanState == .running)
-            .keyboardShortcut(.defaultAction)
-            .help("Read-only. Takes about 10 seconds.")
-        }
-    }
-
-    private func overview(_ r: ScanReport) -> some View {
-        let c = r.counts
-        return Card {
-            HStack(alignment: .firstTextBaseline) {
-                SectionTitle(title: "Latest health overview",
-                             subtitle: "\(r.createdAt.formatted(date: .abbreviated, time: .shortened))\(r.isSampleData ? " · sample data" : "")")
-                Spacer()
-                StatusPill(status: r.overallStatus)
-            }
-            Text(summaryLine(r)).foregroundStyle(Theme.text)
-            HStack(spacing: Theme.s6) {
-                stat("\(c.problems)", "problems", Theme.problem)
-                stat("\(c.warnings)", "need attention", Theme.warning)
-                stat("\(c.unavailable)", "unavailable", Theme.unavailable)
-                if c.failed > 0 { stat("\(c.failed)", "checks failed", Theme.failed) }
-                Spacer()
-                Button("Review & Export…") { model.beginExport(r) }
-            }
-        }
-    }
-
-    private func summaryLine(_ r: ScanReport) -> String {
-        let c = r.counts
-        if c.problems == 0 && c.warnings == 0 {
-            return "Nothing unusual in what MacCheck can measure. Unavailable items are listed in each area with the reason."
-        }
-        return "Some areas need a look. Open an area to see the evidence and what you can do."
-    }
-
-    private func stat(_ value: String, _ label: String, _ color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(value).font(.title2.weight(.semibold).monospacedDigit()).foregroundStyle(color)
-            Text(label).font(.caption).foregroundStyle(Theme.muted)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private func areaGrid(_ r: ScanReport) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: Theme.s4)], spacing: Theme.s4) {
-            ForEach(DiagnosticArea.allCases) { area in
-                Button { model.selection = .area(area) } label: { AreaTile(area: area, result: r.result(for: area)) }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Opens \(area.title) details")
-            }
-        }
-    }
-
-    private var appDoctorTeaser: some View {
-        Card {
-            HStack(spacing: Theme.s4) {
-                Image(systemName: "cross.case").font(.title).foregroundStyle(Theme.accent).accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("An app misbehaving?").font(.headline).foregroundStyle(Theme.text)
-                    Text("App Doctor looks at crash reports, compatibility, installation and recent errors for one app.")
-                        .font(.callout).foregroundStyle(Theme.muted)
-                }
-                Spacer()
-                Button("Open App Doctor") { model.selection = .appDoctor }
-            }
-        }
-    }
-}
-
-struct AreaTile: View {
-    var area: DiagnosticArea
-    var result: CheckResult?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.s2) {
-            HStack {
-                Label(area.title, systemImage: area.symbolName).font(.headline).foregroundStyle(Theme.text)
-                Spacer()
-                if let r = result { StatusPill(status: r.status, compact: true) }
-            }
-            Text(result?.summary ?? area.blurb)
-                .font(.callout).foregroundStyle(Theme.muted).lineLimit(3)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
-        }
-        .padding(Theme.s4)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusLg))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg).strokeBorder(result.map { $0.status.color.opacity(0.35) } ?? Theme.border))
-        .contentShape(RoundedRectangle(cornerRadius: Theme.radiusLg))
-    }
-}
-
 // MARK: - Full diagnostic
 
 struct ScanView: View {
@@ -149,14 +11,14 @@ struct ScanView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.s6) {
                 HStack {
-                    SectionTitle(title: "Full Diagnostic",
-                                 subtitle: "Six read-only checks, each limited in time. Nothing on your Mac is changed.")
+                    SectionTitle(title: "Check Computer",
+                                 subtitle: "Six read-only tests, each limited in time. Nothing on your Mac is changed.")
                     Spacer()
                     switch model.scanState {
                     case .running:
                         Button("Cancel", role: .cancel) { model.cancelScan() }.keyboardShortcut(.cancelAction)
                     default:
-                        Button { model.runFullDiagnostic() } label: { Label("Run Full Diagnostic", systemImage: "play.fill") }
+                        Button { model.runFullDiagnostic() } label: { Label("Start Check", systemImage: "play.fill") }
                             .buttonStyle(PrimaryButtonStyle())
                     }
                 }
@@ -168,8 +30,8 @@ struct ScanView: View {
                 if model.progress.isEmpty {
                     Card {
                         EmptyState(symbol: "stethoscope", title: "Ready when you are",
-                                   message: "Start a scan to see each check's progress here.",
-                                   actionTitle: "Run Full Diagnostic") { model.runFullDiagnostic() }
+                                   message: "Runs every test in the sidebar one after another and shows each one's progress here. Takes about 10 seconds.",
+                                   actionTitle: "Start Check") { model.runFullDiagnostic() }
                     }
                 } else {
                     Card {
@@ -216,7 +78,7 @@ struct ScanView: View {
             .padding(Theme.s6)
             .frame(maxWidth: 1000, alignment: .leading)
         }
-        .navigationTitle("Full Diagnostic")
+        .navigationTitle("Check Computer")
     }
 }
 
