@@ -1,0 +1,9 @@
+.build/
+.swiftpm/
+dist/
+*.xcodeproj/xcuserdata/
+.DS_Store
+out.txt
+err.txt
+/Info.plist
+screenshots/

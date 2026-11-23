@@ -1,0 +1,4 @@
+{"timestamp":"2025-06-02 10:05:00.123456+0200","messageType":"Error","eventMessage":"Failed to load file:///Users/anna/Documents/Taxes.pdf for user anna@example.com token=abc123SECRET","subsystem":"com.example.Notes","processImagePath":"/Applications/Notes.app/Contents/MacOS/Notes"}
+{"timestamp":"2025-06-02 10:05:01.000000+0200","messageType":"Default","eventMessage":"ordinary message","subsystem":"com.example.Notes"}
+{"timestamp":"2025-06-02 10:05:02.000000+0200","messageType":"Fault","eventMessage":"Connection to 192.168.1.23 failed","subsystem":"com.example.Notes"}
+{"finishedAt":"log show summary line, not an event"}

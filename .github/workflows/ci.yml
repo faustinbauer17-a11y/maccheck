@@ -1,0 +1,46 @@
+# CI for MacCheck. Pinned runner images and action versions.
+#  - core-linux: platform-independent tests (fast, cheap)
+#  - macos: compiles EVERYTHING (native collectors + SwiftUI app), runs tests, builds the ad-hoc signed .app
+#    and a smoke run of the CLI on a real macOS runner. Note: GitHub's macOS runners are virtual machines on
+#    Apple Silicon — battery, thermal and SMART results there are NOT representative of a MacBook Air.
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-linux:
+    runs-on: ubuntu-24.04
+    container: swift:6.0-noble
+    steps:
+      - uses: actions/checkout@v5
+      - run: swift build --target MacCheckCore
+      - run: swift test
+
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Toolchain
+        run: swift --version && sw_vers
+      - name: Build all targets
+        run: swift build
+      - name: Unit tests
+        run: swift test
+      - name: CLI smoke test (sample + live, no network probes)
+        run: |
+          swift run maccheck-cli --sample --format text | head -40
+          swift run maccheck-cli --no-network --format markdown | tee live-report.md
+      - name: Build ad-hoc signed app
+        run: ./scripts/build-app.sh --zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MacCheck-app
+          path: |
+            dist/MacCheck.zip
+            live-report.md
+          retention-days: 7

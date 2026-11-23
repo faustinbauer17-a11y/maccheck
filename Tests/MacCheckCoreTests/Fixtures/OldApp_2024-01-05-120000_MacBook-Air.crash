@@ -1,0 +1,13 @@
+Process:               OldApp [812]
+Path:                  /Applications/OldApp.app/Contents/MacOS/OldApp
+Identifier:            com.example.OldApp
+Version:               1.3 (130)
+Code Type:             X86-64 (Translated)
+Date/Time:             2024-01-05 12:00:00.123 +0100
+OS Version:            macOS 14.2 (23C64)
+Report Version:        12
+Anonymous UUID:        12345678-ABCD-ABCD-ABCD-1234567890AB
+
+Exception Type:        EXC_BAD_INSTRUCTION (SIGILL)
+Exception Codes:       0x0000000000000001, 0x0000000000000000
+Termination Reason:    Namespace SIGNAL, Code 4 Illegal instruction: 4

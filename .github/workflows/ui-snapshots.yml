@@ -1,0 +1,41 @@
+# Renders MacCheck's UI on a macOS runner using SAMPLE data and publishes the PNGs to the
+# `ui-screenshots` branch (overwritten each run). The app captures only its own windows.
+name: UI snapshots
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["Sources/MacCheckApp/**", "Sources/MacCheckCore/**", ".github/workflows/ui-snapshots.yml"]
+
+jobs:
+  snapshots:
+    runs-on: macos-15
+    permissions:
+      contents: write   # only to push the ui-screenshots branch
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build app
+        run: ./scripts/build-app.sh
+      - name: Render screens (sample data)
+        run: |
+          mkdir -p shots
+          ( sleep 12; screencapture -x shots/zz-fullscreen-fallback.png || true ) &
+          # timeout: the app quits itself when done; never let a stuck UI hang the job
+          perl -e 'alarm 150; exec @ARGV' dist/MacCheck.app/Contents/MacOS/MacCheck --ui-snapshot "$PWD/shots" || echo "app exited with $?"
+          wait
+          ls -la shots
+          cat shots/snapshot-log.txt || true
+      - name: Publish to ui-screenshots branch
+        run: |
+          cd shots
+          git init -q -b ui-screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898099+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "UI snapshots for ${GITHUB_SHA::7} (sample data)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ui-screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ui-snapshots
+          path: shots
+          retention-days: 7
